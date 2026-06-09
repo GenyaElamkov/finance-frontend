@@ -5,10 +5,12 @@ import AccountsService from '@/services/accounts.service';
 export const useAccountsStore = defineStore('accounts', () => {
     const items = ref([]); // Список счетов
     const isLoading = ref(false); // Флаг загрузки
-    const error = ref(null); // Ошибка
+    const error = ref(null);
 
+    /**
+     * Загружает список счетов с бэкенда и обновляет состояние магазина
+     */
     async function fetchAccounts() {
-        // Получаем список счетов с бэкенда
         isLoading.value = true;
         error.value = null;
         try {
@@ -22,8 +24,11 @@ export const useAccountsStore = defineStore('accounts', () => {
         }
     }
 
+    /**
+     * Добавляет новый счет
+     * @param {accountData} - данные нового счета для создания 
+     */
     async function addAccount(accountData) {
-        // Создаем новый счет
         isLoading.value = true;
         try {
             const newAccount = await AccountsService.create(accountData);
@@ -36,8 +41,32 @@ export const useAccountsStore = defineStore('accounts', () => {
         }
     }
 
+    /**
+     * Обновляет существующий счет
+     * @param {id} - ID счета для обновления
+     * @param {accountData} - данные для обновления счета
+     */
+    async function updateAccount(id, accountData) {
+        isLoading.value = true;
+        try {
+            const updatedAccount = await AccountsService.update(id, accountData);
+            const index = items.value.findIndex(acc => acc.id === id);
+            if (index !== -1) {
+                items.value[index] = updatedAccount;
+            }
+        } catch (err) {
+            console.error(err);
+            throw err;
+        } finally {
+            isLoading.value = false;
+        }
+    }
+
+    /**
+     * Удаляет счет
+     * @param {id} - ID счета для удаления
+     */
     async function removeAccount(id) {
-        // Удаляем счет по id
         try {
             await AccountsService.delete(id);
             items.value = items.value.filter(acc => acc.id !== id);
@@ -53,6 +82,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         error,
         fetchAccounts,
         addAccount,
+        updateAccount,
         removeAccount
     };
 });
