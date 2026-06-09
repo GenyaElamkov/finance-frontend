@@ -4,11 +4,17 @@ import { useCategoriesStore } from '@/stores/categories'
 
 const categoriesStore = useCategoriesStore()
 
-// Состояние формы
+// Состояние формы создания
 const name = ref('')
 const icon = ref('')
-const parentId = ref(null) // Хранит ID или null
+const parentId = ref(null)
 const formError = ref('')
+
+// Состояние редактирования (храним ID категории, которую сейчас редактируют)
+const editingId = ref(null)
+const editName = ref('')
+const editIcon = ref('')
+const editParentId = ref(null)
 
 onMounted(() => {
   categoriesStore.fetchCategories()
@@ -24,6 +30,22 @@ const getSubcategories = (parentCategoryId) => {
   return categoriesStore.items.filter(cat => cat.parent_id === parentCategoryId)
 }
 
+// Включение режима редактирования и заполнение буферных переменных
+const startEdit = (category) => {
+  editingId.value = category.id
+  editName.value = category.name
+  editIcon.value = category.icon || '🏷️'
+  editParentId.value = category.parent_id
+}
+
+// Сброс режима редактирования
+const cancelEdit = () => {
+  editingId.value = null
+  editName.value = ''
+  editIcon.value = ''
+  editParentId.value = null
+}
+
 const handleCreateCategory = async () => {
   formError.value = ''
   if (!name.value.trim()) {
@@ -32,14 +54,12 @@ const handleCreateCategory = async () => {
   }
 
   try {
-    // Передаем объект в стор
     await categoriesStore.addCategory({
       name: name.value.trim(),
-      icon: icon.value.trim() || '🏷️', // Дефолтное эмодзи, если поле пустое
+      icon: icon.value.trim() || '🏷️',
       parent_id: parentId.value ? Number(parentId.value) : null
     })
     
-    // Сброс формы
     name.value = ''
     icon.value = ''
     parentId.value = null
@@ -48,17 +68,37 @@ const handleCreateCategory = async () => {
   }
 }
 
+const handleUpdateCategory = async (categoryId) => {
+  if (!editName.value.trim()) {
+    alert('Название не может быть пустым')
+    return
+  }
+
+  try {
+    // Вызываем метод стора (убедись, что в вашем сторе есть updateCategory или аналогичный метод)
+    await categoriesStore.updateCategory(categoryId, {
+      name: editName.value.trim(),
+      icon: editIcon.value.trim(),
+      parent_id: editParentId.value ? Number(editParentId.value) : null
+    })
+    
+    // Выходим из режима редактирования при успехе
+    editingId.value = null
+  } catch (err) {
+    alert('Не удалось обновить категорию.')
+  }
+}
+
 const hasSubcategories = (categoryId) => {
-  // Проверяем наличие подкатегории
   return categoriesStore.items.some(cat => cat.parent_id === categoryId)
 }
 
 const handleDeleteCategory = async (id) => {
   const category = categoriesStore.items.find(cat => cat.id === id)
   if (!category) return
-  // Если у категории есть подкатегории - запрещаем удаление
+
   if (hasSubcategories(id)) {
-    alert('Невозможно удалить категорию: у нее есть подкатегории. Сначала удалите или переназначтье их.')
+    alert('Невозможно удалить категорию: у нее есть подкатегории. Сначала удалите или переназначьте их.')
     return
   }
 
@@ -159,19 +199,29 @@ const handleDeleteCategory = async (id) => {
         >
           <div>
             <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-3 truncate">
+              
+              <div v-if="editingId === category.id" class="flex items-center space-x-2 w-full mr-2">
+                <input v-model="editIcon" type="text" class="w-12 border rounded p-1 text-center text-sm" />
+                <input v-model="editName" type="text" class="flex-1 border rounded p-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <button @click="handleUpdateCategory(category.id)" class="text-green-600 hover:text-green-700 text-sm font-bold p-1">✔️</button>
+                <button @click="cancelEdit" class="text-gray-400 hover:text-gray-600 text-sm font-bold p-1">❌</button>
+              </div>
+
+              <div v-else @click="startEdit(category)" class="flex items-center space-x-3 truncate cursor-pointer title-edit-zone w-full" title="Кликните для редактирования">
                 <span class="text-2xl">{{ category.icon || '🏷️' }}</span>
-                <span class="font-bold text-gray-900 truncate text-base sm:text-lg">
+                <span class="font-bold text-gray-900 truncate text-base sm:text-lg group-hover:text-indigo-600 transition-colors">
                   {{ category.name }}
                 </span>
+                <span class="text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
               </div>
 
               <button 
+                v-if="editingId !== category.id"
                 @click="handleDeleteCategory(category.id)"
                 class="text-gray-400 hover:text-red-500 p-1 rounded transition-colors md:opacity-0 group-hover:opacity-100 focus:opacity-100"
                 title="Удалить категорию"
               >
-                ✕
+                🗑️
               </button>
             </div>
 
@@ -184,17 +234,26 @@ const handleDeleteCategory = async (id) => {
                 <div 
                   v-for="sub in getSubcategories(category.id)" 
                   :key="sub.id"
-                  class="inline-flex items-center space-x-1 pl-2 pr-1.5 py-0.5 rounded-md text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200 group/sub hover:bg-red-50 transition-colors"
+                  class="inline-flex items-center space-x-1 pl-2 pr-1.5 py-0.5 rounded-md text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200 group/sub transition-colors"
                 >
-                  <span>{{ sub.icon || '🏷️' }}</span>
-                  <span class="truncate max-w-[100px]">{{ sub.name }}</span>
-                  <button 
-                    @click.stop="handleDeleteCategory(sub.id)"
-                    class="text-gray-400 hover:text-red-600 font-bold px-1 rounded"
-                    title="Удалить подкатегорию"
-                  >
-                    ×
-                  </button>
+                  <div v-if="editingId === sub.id" class="flex items-center space-x-1">
+                    <input v-model="editIcon" type="text" class="w-8 border rounded px-0.5 py-2.5 text-center text-[10px]" />
+                    <input v-model="editName" type="text" class="w-20 border rounded px-1 py-2.5 text-[10px] focus:outline-none" />
+                    <button @click="handleUpdateCategory(sub.id)" class="text-green-600 text-[10px]">✔️</button>
+                    <button @click="cancelEdit" class="text-gray-400 text-[10px]">❌</button>
+                  </div>
+
+                  <div v-else @click.stop="startEdit(sub)" class="flex items-center space-x-1 cursor-pointer" title="Кликните для изменения подкатегории">
+                    <span>{{ sub.icon || '🏷️' }}</span>
+                    <span class="truncate max-w-[100px] hover:text-indigo-600">{{ sub.name }}</span>
+                    <button 
+                      @click.stop="handleDeleteCategory(sub.id)"
+                      class="text-gray-400 hover:text-red-600 font-bold px-1 rounded ml-1"
+                      title="Удалить подкатегорию"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
               </div>
 
