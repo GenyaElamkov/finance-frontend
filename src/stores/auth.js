@@ -1,0 +1,101 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import AuthService from '@/services/auth.service'
+import router from '@/routers'
+
+export const useAuthStore = defineStore('auth', () => {
+  // --- State (Состояние) ---
+  const user = ref(null)
+  const accessToken = ref(localStorage.getItem('access_token') || null)
+  const refreshToken = ref(localStorage.getItem('refresh_token') || null)
+  const isLoading = ref(false)
+
+  // --- Getters (Вычисляемые свойства) ---
+  const isAuthenticated = computed(() => !!accessToken.value)
+
+  // --- Actions (Методы) ---
+
+  /**
+   * Логин пользователя
+   */
+  async function login(email, password) {
+    isLoading.value = true
+    try {
+      const data = await AuthService.login(email, password)
+
+      // Сохраняем токены в состояние и localStorage
+      accessToken.value = data.access_token
+      refreshToken.value = data.refresh_token
+      localStorage.setItem('access_token', data.access_token)
+      localStorage.setItem('refresh_token', data.refresh_token)
+
+      // Сразу после успешного входа запрашиваем профиль пользователя
+      await fetchCurrentUser()
+
+      // Перенаправляем пользователя на главную страницу (Dashboard)
+      router.push({ name: 'dashboard' })
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error // Пробрасываем ошибку наружу, чтобы обработать её в форме (показать alert)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * Регистрация пользователя
+   */
+  async function register(userData) {
+    isLoading.value = true
+    try {
+      await AuthService.register(userData)
+      // После успешной регистрации автоматически логиним пользователя
+      await login(userData.email, userData.password)
+    } catch (error) {
+      console.error('Registration error:', error)
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * Получение данных профиля
+   */
+  async function fetchCurrentUser() {
+    if (!accessToken.value) return
+    try {
+      const userData = await AuthService.getCurrentUser()
+      user.value = userData
+    } catch (error) {
+      // Если /users/me упал (например токен невалиден), делаем logout
+      logout()
+    }
+  }
+
+  /**
+   * Выход из системы
+   */
+  function logout() {
+    user.value = null
+    accessToken.value = null
+    refreshToken.value = null
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+
+    // Перенаправляем на страницу входа
+    router.push({ name: 'login' })
+  }
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+    isLoading,
+    isAuthenticated,
+    login,
+    register,
+    fetchCurrentUser,
+    logout,
+  }
+})
