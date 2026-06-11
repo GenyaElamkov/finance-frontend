@@ -32,7 +32,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         isLoading.value = true;
         try {
             const newAccount = await AccountsService.create(accountData);
-            items.value.push(newAccount); // Добавляем новый счет в список
+            items.value.push(newAccount);
         } catch (err) {
             console.error(err);
             throw err;

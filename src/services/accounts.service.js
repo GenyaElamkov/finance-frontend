@@ -6,7 +6,7 @@ const AccountsService = {
         const response = await apiClient.get("/accounts/");
         return response.data;
     },
-    // POST /accounts/ - Создать счет (принимает AccountCreate: name, balance и т.д.)
+    // POST /accounts/ - Создать счет (принимает AccountCreate: name, initial_balance и т.д.)
     async create(accountData) {
         const response = await apiClient.post("/accounts/", accountData);
         return response.data;

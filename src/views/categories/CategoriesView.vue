@@ -245,7 +245,7 @@ const handleDeleteCategory = async (id) => {
 
                   <div v-else @click.stop="startEdit(sub)" class="flex items-center space-x-1 cursor-pointer" title="Кликните для изменения подкатегории">
                     <span>{{ sub.icon || '🏷️' }}</span>
-                    <span class="truncate max-w-[100px] hover:text-indigo-600">{{ sub.name }}</span>
+                    <span class="truncate max-w-[200px] hover:text-indigo-600">{{ sub.name }}</span>
                     <button 
                       @click.stop="handleDeleteCategory(sub.id)"
                       class="text-gray-400 hover:text-red-600 font-bold px-1 rounded ml-1"
