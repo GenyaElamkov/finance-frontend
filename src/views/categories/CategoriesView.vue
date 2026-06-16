@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useCategoriesStore } from '@/stores/categories'
+import EmojiPicker from '@/components/ui/EmojiPicker.vue'
 
 const categoriesStore = useCategoriesStore()
 
@@ -140,14 +141,19 @@ const handleDeleteCategory = async (id) => {
 
         <div class="md:col-span-1">
           <label class="block text-sm font-medium text-gray-700 mb-1">Иконка (Эмодзи)</label>
-          <input 
-            v-model="icon"
-            type="text" 
-            placeholder="Например: 🍏, 🚗, 💵"
-            class="w-full rounded-lg border-gray-300 ring-1 ring-gray-200 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />  
+          <div class="relative">
+            <EmojiPicker
+              v-model="icon"
+              placeholder="Выберите иконку"
+              button-class="w-full rounded-lg border-gray-300 ring-1 ring-gray-200 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            />
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div> 
         </div>
-
+        </div>
         <div class="md:col-span-1">
           <label class="block text-sm font-medium text-gray-700 mb-1">Родительская категория</label>
           <div class="relative">
@@ -201,7 +207,7 @@ const handleDeleteCategory = async (id) => {
             <div class="flex items-center justify-between">
               
               <div v-if="editingId === category.id" class="flex items-center space-x-2 w-full mr-2">
-                <input v-model="editIcon" type="text" class="w-12 border rounded p-1 text-center text-sm" />
+                <EmojiPicker v-model="editIcon" class="w-10 border rounded p-1" />
                 <input v-model="editName" type="text" class="flex-1 border rounded p-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
                 <button @click="handleUpdateCategory(category.id)" class="text-green-600 hover:text-green-700 text-sm font-bold p-1">✔️</button>
                 <button @click="cancelEdit" class="text-gray-400 hover:text-gray-600 text-sm font-bold p-1">❌</button>
@@ -237,13 +243,14 @@ const handleDeleteCategory = async (id) => {
                   class="inline-flex items-center space-x-1 pl-2 pr-1.5 py-0.5 rounded-md text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200 group/sub transition-colors"
                 >
                   <div v-if="editingId === sub.id" class="flex items-center space-x-1">
-                    <input v-model="editIcon" type="text" class="w-8 border rounded px-0.5 py-2.5 text-center text-[10px]" />
-                    <input v-model="editName" type="text" class="w-20 border rounded px-1 py-2.5 text-[10px] focus:outline-none" />
+                    <EmojiPicker v-model="editIcon" class="w-10 text-2xl" />
+
+                    <input v-model="editName" type="text" class="w-40 border rounded px-1 py-2.5 text-[14px] focus:outline-none" />
                     <button @click="handleUpdateCategory(sub.id)" class="text-green-600 text-[10px]">✔️</button>
                     <button @click="cancelEdit" class="text-gray-400 text-[10px]">❌</button>
                   </div>
 
-                  <div v-else @click.stop="startEdit(sub)" class="flex items-center space-x-1 cursor-pointer" title="Кликните для изменения подкатегории">
+                  <div v-else @click.stop="startEdit(sub)" class="flex items-center space-x-1 cursor-pointer" title="Кликните для изменения подкатегории">                    
                     <span>{{ sub.icon || '🏷️' }}</span>
                     <span class="truncate max-w-[200px] hover:text-indigo-600">{{ sub.name }}</span>
                     <button 
