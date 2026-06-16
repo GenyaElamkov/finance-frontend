@@ -52,7 +52,7 @@ const handleCreateAccount = async () => {
   try {
     await accountsStore.addAccount({
       name: name.value.trim(),
-      type: accountType.value,
+      account_type: accountType.value,
       currency: currency.value,
       initial_balance: balance.value
     })
@@ -80,7 +80,7 @@ const handleUpdateAccount = async (id) => {
     // Вызываем метод обновления в Pinia сторе
     await accountsStore.updateAccount(id, {
       name: editName.value.trim(),
-      type: editType.value,
+      account_type: editType.value,
       currency: editCurrency.value,
       initial_balance: editBalance.value, // Передаем измененный баланс
     })

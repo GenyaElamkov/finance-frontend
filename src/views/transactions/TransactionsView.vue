@@ -50,7 +50,7 @@ const handleCreateTransaction = async () => {
       account_id: Number(accountId.value),
       category_id: categoryId.value ? Number(categoryId.value) : null,
       description: description.value.trim(),
-      type: type.value,
+      transaction_type: type.value,
       transaction_date: transactionDate.value
     })
 
@@ -234,8 +234,8 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
                     {{ t.transaction_date }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-base">
-                    <span :class="t.type === 'расходы' ? 'text-red-600': 'text-green-600'">
-                      {{ t.type === 'расходы' ? '-' : '+' }}{{ Math.abs(t.amount).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' }) }}
+                    <span :class="t.transaction_type === 'расходы' ? 'text-red-600': 'text-green-600'">
+                      {{ t.transaction_type === 'расходы' ? '-' : '+' }}{{ Math.abs(t.amount).toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' }) }}
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-center">

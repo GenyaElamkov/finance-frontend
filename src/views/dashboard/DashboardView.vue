@@ -23,14 +23,14 @@ const totalBalance = computed(() => {
 // 2. Расчет общего объема доходов (суммируем только положительные транзакции)
 const totalIncome = computed(() => {
   return transactionsStore.listData.items
-    .filter(t => t.type === 'доходы')
+    .filter(t => t.transaction_type === 'доходы')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 })
 
 // 3. Расчет общего объема расходов (суммируем отрицательные транзакции)
 const totalExpenses = computed(() => {
   return transactionsStore.listData.items
-    .filter(t => t.type === 'расходы')
+    .filter(t => t.transaction_type === 'расходы')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 })
 
@@ -152,8 +152,8 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
               </div>
 
               <div class="text-right">
-                <span class="font-bold text-base block" :class="t.type === 'доходы' ? 'text-green-600' : 'text-red-600'">
-                  {{ t.type === 'доходы' ? '+' : '- ' }}{{ t.amount.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' }) }}
+                <span class="font-bold text-base block" :class="t.transaction_type === 'доходы' ? 'text-green-600' : 'text-red-600'">
+                  {{ t.transaction_type === 'доходы' ? '+' : '- ' }}{{ t.amount.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' }) }}
                 </span>
                 <span class="text-[10px] text-gray-400 truncate max-w-[120px] block italic">
                   {{ t.description || 'Без описания' }}
