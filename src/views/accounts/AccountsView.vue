@@ -56,7 +56,10 @@ const handleCreateAccount = async () => {
       currency: currency.value,
       initial_balance: balance.value
     })
-    
+    // if (initial_balance.value < 0) {
+    //   formError.value = 'Начальный баланс не может быть отрицательным'
+    //   return
+    // }
     // Очищаем форму при успехе
     name.value = ''
     accountType.value = 'карта'
@@ -172,6 +175,7 @@ const handleDeleteAccount = async (id) => {
             v-model.number="balance"
             type="number" 
             step="0.01"
+            min="0"
             placeholder="0.00"
             class="w-full rounded-lg border-gray-300 ring-1 ring-gray-200 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             required
@@ -244,7 +248,13 @@ const handleDeleteAccount = async (id) => {
               </div>
               <div>
                 <label class="block text-[11px] font-medium text-gray-500 mb-0.5">Баланс (коррекция)</label>
-                <input v-model.number="editBalance" type="number" step="0.01" class="w-full border rounded px-2 py-1 text-sm focus:outline-none" />
+                <input 
+                  v-model.number="editBalance" 
+                  type="number" 
+                  step="0.01" 
+                  min="0"
+                  class="w-full border rounded px-2 py-1 text-sm focus:outline-none"
+                />
               </div>
             </div>
           </div>
