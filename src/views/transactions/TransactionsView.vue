@@ -1,9 +1,10 @@
 <script setup>
-import { onMounted, ref, computed, nextTick, onUnmounted } from 'vue'
+import { onMounted, ref, computed, nextTick, onUnmounted, watch } from 'vue'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
 
+// Состояния сторов
 const transactionsStore = useTransactionsStore()
 const accountsStore = useAccountsStore()
 const categoriesStore = useCategoriesStore()
@@ -16,6 +17,17 @@ const categoryId = ref('')
 const description = ref('')
 const transactionDate = ref(new Date().toISOString().slice(0, 10)) 
 const formError = ref('')
+
+// Состояние фильтров
+const isFiltersOpen = ref(false)
+const filters = ref({
+  date_from: '',
+  date_to: '',
+  category_id: '',
+  account_id: '',
+  transaction_type: ''
+})
+
 
 // Состояние инлайн редактирования
 const editingId = ref(null) // ID транзакции, которую сейчас редактируют
@@ -57,24 +69,55 @@ onUnmounted(() => {
 
 // Методы для работы с пагинацией и сортировкой
 const getPaginationParams = () => {
-  return {
+  const params = {
     page: currentPage.value,
     page_size: pageSize.value,
     date_sort: isDescSort.value
   }
+
+  // Добавляем фильтры только если они заданы
+  if (filters.value.account_id) params.account_id = Number(filters.value.account_id)
+  if (filters.value.category_id) params.category_id = Number(filters.value.category_id)
+  if (filters.value.transaction_type) params.transaction_type = filters.value.transaction_type
+  if (filters.value.date_from) params.date_from = filters.value.date_from 
+  if (filters.value.date_to) params.date_to = filters.value.date_to
+
+  return params
 }
 
+// Методы для работы с пагинацией и сортировкой
 const loadInitialTransactions = () => {
   currentPage.value = 1
   transactionsStore.fetchTransactions(getPaginationParams(), false)
 }
 
+// Загрузка следующей страницы
 const loadMoreTransactions = async () => {
   if (isLoading.value || !hasMore.value) return
   currentPage.value++
   await transactionsStore.fetchTransactions(getPaginationParams(), true)
 }
 
+// Обновление фильтров
+watch(filters, () => {
+  loadInitialTransactions(),
+  nextTick(() => {
+    initInfiniteScroll()
+  })
+}, {deep: true})
+
+// Сброс фильтров
+const resetFilters = () => {
+  filters.value = {
+    date_from: '',
+    date_to: '',
+    category_id: '',
+    account_id: '',
+    transaction_type: ''
+  }
+}
+
+// Сортировка по дате
 const toggleDateSort = () => {
   isDescSort.value = !isDescSort.value,
   loadInitialTransactions()
@@ -83,6 +126,7 @@ const toggleDateSort = () => {
   })
 }
 
+// Инициализация бесконечной пагинации
 const initInfiniteScroll = () => {
   if (observer) {
     observer.disconnect()
@@ -303,8 +347,68 @@ const formatDate = (dateString) => {
       </form>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Фильтры -->
+    <div class="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <button 
+          @click="isFiltersOpen = !isFiltersOpen" 
+          class="sm:pointer-events-none flex items-center gap-1.5 text-sm font-semibold text-gray-800 uppercase tracking-wider focus:outline-none w-full sm:w-auto text-left"
+        >
+          <span>🔍 Фильтры журнала</span>
+          <span class="inline-block sm:hidden transition-transform duration-200 text-indigo-600 font-bold" :class="{ 'rotate-180': isFiltersOpen }">
+            ▼
+          </span>
+        </button>
+        <button @click="resetFilters" class="text-xs text-indigo-600 hover:text-indigo-500 font-medium transition-colors shrink-0">
+          ❌ Сбросить все
+        </button>
+      </div>
       
+      <div 
+        :class="[isFiltersOpen ? 'block' : 'hidden', 'sm:grid']"
+        class="grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 sm:pt-0 border-t border-gray-200 sm:border-t-0"
+      >
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Период от</label>
+          <input v-model="filters.date_from" type="date" class="w-full h-[38px] rounded-lg border border-gray-300 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Период до</label>
+          <input v-model="filters.date_to" type="date" class="w-full h-[38px] rounded-lg border border-gray-300 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Счет</label>
+          <select v-model="filters.account_id" class="w-full h-[38px] rounded-lg border border-gray-300 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+            <option value="">Все счета</option>
+            <option v-for="acc in accountsStore.items" :key="acc.id" :value="acc.id">{{ acc.name }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Категория</label>
+          <select v-model="filters.category_id" class="w-full h-[38px] rounded-lg border border-gray-300 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+            <option value="">Все категории</option>
+            <option v-for="cat in categoriesStore.items" :key="cat.id" :value="cat.id">
+              {{ cat.icon || '🏷️' }} {{ cat.name }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Тип операции</label>
+          <select v-model="filters.transaction_type" class="w-full h-[38px] rounded-lg border border-gray-300 py-2 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+            <option value="">Все типы</option>
+            <option value="доходы">📈 Доход</option>
+            <option value="расходы">📉 Расход</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Сортировка -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div class="block sm:hidden p-4 bg-gray-50 border-b border-gray-100 text-right">
         <button @click="toggleDateSort" class="text-xs font-medium focus:outline-none">
           Сортировка по дате: {{ isDescSort ? '⬇️ Сначала старые' : '⬆️ Сначала новые' }}
