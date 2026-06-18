@@ -17,7 +17,7 @@ const description = ref('')
 const transactionDate = ref(new Date().toISOString().slice(0, 10)) 
 const formError = ref('')
 
-// СОСТОЯНИЕ ИНЛАЙН-РЕДАКТИРОВАНИЯ
+// Состояние инлайн редактирования
 const editingId = ref(null) // ID транзакции, которую сейчас редактируют
 const editForm = ref({
   amount: 0,
@@ -28,9 +28,10 @@ const editForm = ref({
   transaction_date: ''
 })
 
-// НАСТРОЙКИ БЕСКОНЕЧНОЙ ПАГИНАЦИИ
+// Настройка бесконечено пагинации и сортировки
 const currentPage = ref(1)
 const pageSize = ref(20)
+const isDescSort = ref(false)
 let observer = null
 
 const hasMore = computed(() => transactionsStore.hasMore())
@@ -54,10 +55,12 @@ onUnmounted(() => {
   }
 })
 
+// Методы для работы с пагинацией и сортировкой
 const getPaginationParams = () => {
   return {
     page: currentPage.value,
-    page_size: pageSize.value
+    page_size: pageSize.value,
+    date_sort: isDescSort.value
   }
 }
 
@@ -70,6 +73,14 @@ const loadMoreTransactions = async () => {
   if (isLoading.value || !hasMore.value) return
   currentPage.value++
   await transactionsStore.fetchTransactions(getPaginationParams(), true)
+}
+
+const toggleDateSort = () => {
+  isDescSort.value = !isDescSort.value,
+  loadInitialTransactions()
+  nextTick(() => {
+    initInfiniteScroll()
+  })
 }
 
 const initInfiniteScroll = () => {
@@ -190,6 +201,7 @@ const handleDelete = async (id) => {
   }
 }
 
+// Форматирование суммы
 const formatAmount = (amount, type) => {
   const sign = type === 'расходы' ? '-' : '+'
   return `${sign}${Math.abs(amount).toLocaleString('ru-RU', { 
@@ -197,6 +209,14 @@ const formatAmount = (amount, type) => {
     currency: 'RUB' 
   })}`
 }
+
+// Форматирование даты
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const [year, month, day] = dateString.split('-')
+  return `${day}.${month}.${year}`
+}
+
 </script>
 
 <template>
@@ -300,7 +320,14 @@ const formatAmount = (amount, type) => {
                 <th class="px-4 py-4">Категория</th>
                 <th class="px-4 py-4">Счет</th>
                 <th class="px-4 py-4">Комментарий</th>
-                <th class="px-4 py-4">Дата</th>
+
+                <th class="px-4 py-4 cursor-pointer hover:bg-gray-100 transition-colors select-none" @click="toggleDateSort">
+                  <div class="flex items-center space-x-1">
+                    <span>Дата</span>
+                    <span class="text-indigo-600 font-bold text-sm">{{ isDescSort ? '⇣' : '⇡' }}</span>
+                  </div>
+                </th>
+
                 <th class="px-4 py-4 text-right">Тип / Сумма</th>
                 <th class="px-4 py-4 text-center">Действия</th>
               </tr>
@@ -347,7 +374,7 @@ const formatAmount = (amount, type) => {
                   <div v-if="editingId === t.id" @click.stop>
                     <input v-model="editForm.transaction_date" type="date" class="rounded border-gray-300 py-1 px-2 text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none" />
                   </div>
-                  <span v-else>{{ t.transaction_date }}</span>
+                  <span v-else>{{ formatDate(t.transaction_date) }}</span>
                 </td>
 
                 <td class="px-4 py-3 whitespace-nowrap text-right font-bold">
@@ -428,7 +455,7 @@ const formatAmount = (amount, type) => {
               <div class="flex justify-between items-center text-xs text-gray-500">
                 <div>
                   <span class="mr-3">💳 {{ getAccountName(t.account_id) }}</span>
-                  <span class="text-gray-400">{{ t.transaction_date }}</span>
+                  <span class="text-gray-400">{{ formatDate(t.transaction_date) }}</span>
                   <p v-if="t.description" class="text-gray-400 mt-1 italic">«{{ t.description }}»</p>
                 </div>
                 <button @click.stop="handleDelete(t.id)" class="text-red-400 active:text-red-600 p-2 text-sm">
