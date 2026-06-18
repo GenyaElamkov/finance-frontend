@@ -304,6 +304,13 @@ const formatDate = (dateString) => {
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      
+      <div class="block sm:hidden p-4 bg-gray-50 border-b border-gray-100 text-right">
+        <button @click="toggleDateSort" class="text-xs font-medium focus:outline-none">
+          Сортировка по дате: {{ isDescSort ? '⬇️ Сначала старые' : '⬆️ Сначала новые' }}
+        </button>
+      </div>
+      
       <div v-if="isLoading && transactionsStore.listData.items.length === 0" class="flex justify-center py-12">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
