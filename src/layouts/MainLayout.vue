@@ -74,7 +74,7 @@ const handleLogout = () => {
           </div>
           <div class="truncate">
             <span class="text-xs text-gray-400 block">Вы вошли как</span>
-            <span class="text-sm font-semibold text-gray-800 block truncate">{{ authStore.user?.username || authStore.user?.email }}</span>
+            <span class="text-sm font-semibold text-gray-800 block truncate">{{ authStore.user?.full_name || authStore.user?.email }}</span>
           </div>
         </div>
 
@@ -124,7 +124,7 @@ const handleLogout = () => {
             </div>
             <div class="truncate">
               <span class="text-[10px] text-gray-400 block">Аккаунт</span>
-              <span class="text-sm font-semibold text-gray-800 block truncate">{{ authStore.user?.username || authStore.user?.email }}</span>
+              <span class="text-sm font-semibold text-gray-800 block truncate">{{ authStore.user?.full_name || authStore.user?.email }}</span>
             </div>
           </div>
 
