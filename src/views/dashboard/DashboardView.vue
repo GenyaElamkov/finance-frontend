@@ -15,26 +15,26 @@ onMounted(() => {
   categoriesStore.fetchCategories()
 })
 
-// 1. Расчет общей суммы на всех счетах
+// Расчет общей суммы на всех счетах
 const totalBalance = computed(() => {
   return accountsStore.items.reduce((sum, account) => sum + Number(account.balance), 0)
 })
 
-// 2. Расчет общего объема доходов (суммируем только положительные транзакции)
+// Расчет общего объема доходов (суммируем только положительные транзакции)
 const totalIncome = computed(() => {
   return transactionsStore.listData.items
     .filter(t => t.transaction_type === 'доходы')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 })
 
-// 3. Расчет общего объема расходов (суммируем отрицательные транзакции)
+// Расчет общего объема расходов (суммируем отрицательные транзакции)
 const totalExpenses = computed(() => {
   return transactionsStore.listData.items
     .filter(t => t.transaction_type === 'расходы')
     .reduce((sum, t) => sum + Number(t.amount), 0)
 })
 
-// 4. Получение списка последних 5 транзакций для вывода в быструю таблицу
+// Получение списка последних 5 транзакций для вывода в быструю таблицу
 const recentTransactions = computed(() => {
   return transactionsStore.listData.items.slice(0, 5)
 })
