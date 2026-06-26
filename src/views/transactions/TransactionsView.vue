@@ -1,8 +1,12 @@
 <script setup>
 import { onMounted, ref, computed, nextTick, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
+
+// Настройка роутера
+const route = useRoute()
 
 // Состояния сторов
 const transactionsStore = useTransactionsStore()
@@ -54,6 +58,11 @@ const getCategoryName = (id) => categoriesStore.items.find(c => c.id === id)?.na
 const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.icon || '📝'
 
 onMounted(() => {
+  if (route.query.type) {
+    filters.value.transaction_type = route.query.typeё
+    type.value = route.query.type
+  }
+
   loadInitialTransactions()
   accountsStore.fetchAccounts()
   categoriesStore.fetchCategories()
@@ -240,7 +249,7 @@ const handleDelete = async (id) => {
     try {
       await transactionsStore.removeTransaction(id)
     } catch (err) {
-      alert('Не удалось удалить транзакцию.')
+      alert('Не удалось удалить транзацию.')
     }
   }
 }
