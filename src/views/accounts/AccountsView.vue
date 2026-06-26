@@ -56,10 +56,7 @@ const handleCreateAccount = async () => {
       currency: currency.value,
       initial_balance: balance.value
     })
-    // if (initial_balance.value < 0) {
-    //   formError.value = 'Начальный баланс не может быть отрицательным'
-    //   return
-    // }
+
     // Очищаем форму при успехе
     name.value = ''
     accountType.value = 'карта'
@@ -211,7 +208,7 @@ const handleDeleteAccount = async (id) => {
           :key="account.id"
           class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group"
         >
-          <div class="absolute top-0 left-0 right-0 h-1.5 bg-indigo-500"></div>
+          <div class="absolute top-0 left-0 right-0 h-1.5 "></div>
           
           <div v-if="editingId === account.id" class="space-y-4 w-full">
             <div class="flex items-center justify-between border-b pb-2 mb-2">
