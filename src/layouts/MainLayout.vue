@@ -27,10 +27,10 @@ const handleLogout = () => {
   <div class="min-h-screen bg-gray-50 flex flex-col md:flex-row w-full overflow-x-hidden">
     
     <header class="md:hidden w-full flex items-center justify-between bg-white px-4 py-3.5 border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-      <div class="flex items-center space-x-2">
+      <router-link :to="{ name: 'dashboard' }" class="flex items-center space-x-2 active:opacity-80">
         <span class="text-2xl">🪙</span>
         <span class="font-black text-lg tracking-tight bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">FinTrack</span>
-      </div>
+      </router-link>
       
       <button 
         @click="isMobileMenuOpen = true"
@@ -44,12 +44,12 @@ const handleLogout = () => {
 
     <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 left-0 bg-white border-r border-gray-200 p-5 justify-between z-20">
       <div class="space-y-6">
-        <div class="flex items-center space-x-3 px-2">
+        <router-link :to="{ name: 'dashboard' }" class="flex items-center space-x-3 px-2 hover:opacity-90 transition-opacity">
           <span class="text-3xl">🪙</span>
           <span class="font-black text-xl tracking-tight bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">
             FinTrack
           </span>
-        </div>
+        </router-link>
 
         <nav class="space-y-1">
           <router-link
@@ -67,13 +67,25 @@ const handleLogout = () => {
         </nav>
       </div>
 
-      <button 
-        @click="handleLogout"
-        class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:bg-red-50 hover:text-red-600 transition-all w-full text-left"
-      >
-        <span>🚪</span>
-        <span>Выйти из аккаунта</span>
-      </button>
+      <div class="space-y-3.5">
+        <div v-if="authStore.user" class="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100">
+          <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-sm uppercase shrink-0">
+            {{ authStore.user?.username?.charAt(0) || 'U' }}
+          </div>
+          <div class="truncate">
+            <span class="text-xs text-gray-400 block">Вы вошли как</span>
+            <span class="text-sm font-semibold text-gray-800 block truncate">{{ authStore.user?.username || authStore.user?.email }}</span>
+          </div>
+        </div>
+
+        <button 
+          @click="handleLogout"
+          class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:bg-red-50 hover:text-red-600 transition-all w-full text-left"
+        >
+          <span>🚪</span>
+          <span>Выйти из аккаунта</span>
+        </button>
+      </div>
     </aside>
 
     <div v-if="isMobileMenuOpen" class="md:hidden fixed inset-0 z-50 flex">
@@ -105,19 +117,32 @@ const handleLogout = () => {
           </nav>
         </div>
 
-        <button 
-          @click="handleLogout"
-          class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all w-full text-left border-t border-gray-100 pt-4"
-        >
-          <span>🚪</span>
-          <span>Выйти из аккаунта</span>
-        </button>
+        <div class="space-y-3 border-t border-gray-100 pt-4">
+          <div v-if="authStore.user" class="flex items-center space-x-3 px-4 py-2.5 bg-gray-50 rounded-xl border border-gray-100 mx-1">
+            <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-sm uppercase shrink-0">
+              {{ authStore.user?.username?.charAt(0) || 'U' }}
+            </div>
+            <div class="truncate">
+              <span class="text-[10px] text-gray-400 block">Аккаунт</span>
+              <span class="text-sm font-semibold text-gray-800 block truncate">{{ authStore.user?.username || authStore.user?.email }}</span>
+            </div>
+          </div>
+
+          <button 
+            @click="handleLogout"
+            class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all w-full text-left"
+          >
+            <span>🚪</span>
+            <span>Выйти из аккаунта</span>
+          </button>
+        </div>
       </div>
     </div>
 
     <div class="flex-1 min-w-0 md:pl-64 flex flex-col">
       <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-        <router-view /> </main>
+        <router-view /> 
+      </main>
     </div>
 
   </div>
