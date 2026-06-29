@@ -43,6 +43,11 @@ export const routes = [
         name: 'transactions',
         component: () => import('@/views/transactions/TransactionsView.vue'),
       },
+      {
+        path: 'analytics',
+        name: 'analytics',
+        component: () => import('@/views/analytics/AnalyticsView.vue'),
+      }
     ],
   },
 

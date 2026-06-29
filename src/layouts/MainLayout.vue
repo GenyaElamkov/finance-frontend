@@ -15,6 +15,7 @@ const navigationItems = [
   { name: 'Мои счета', viewName: 'accounts', icon: '💳' },
   { name: 'Категории', viewName: 'categories', icon: '🏷️' },
   { name: 'Транзакции', viewName: 'transactions', icon: '📝' },
+  { name: 'Аналитика', viewName: 'analytics', icon: '📈' },
 ]
 
 const handleLogout = () => {
