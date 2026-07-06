@@ -8,7 +8,7 @@ const apiClient = axios.create({
   },
 });
 
-// 1. Интерцептор ЗАПРОСА: добавляет Access Token в заголовки
+// Интерцептор ЗАПРОСА: добавляет Access Token в заголовки
 apiClient.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem('access_token');
@@ -22,7 +22,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 2. Интерцептор ОТВЕТА: перехватывает 401 ошибку и обновляет токен
+// Интерцептор ОТВЕТА: перехватывает 401 ошибку и обновляет токен
 apiClient.interceptors.response.use(
   (response) => response, // Если всё ок, просто возвращаем ответ
   async (error) => {

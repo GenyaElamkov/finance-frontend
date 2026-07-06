@@ -86,6 +86,35 @@ export const useAuthStore = defineStore('auth', () => {
     // Перенаправляем на страницу входа
     router.push({ name: 'login' })
   }
+  /**
+   * Обновление имени и email
+   */
+  async function updateProfileData(payload) {
+    try {
+      // Отправляем изменения на бэкенд через сервис
+      const updatedUser = await AuthService.updateProfile(payload)
+      
+      // Перезаписываем текущего пользователя в стейте, 
+      // чтобы изменения сразу отобразились по всему интерфейсу (в сайдбаре)
+      user.value = updatedUser
+    } catch (error) {
+      console.error('Update profile error:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Смена пароля
+   */
+  async function updateUserPassword(payload) {
+    try {
+      // Отправляем старый и новый пароль на бэкенд
+      await AuthService.changePassword(payload)
+    } catch (error) {
+      console.error('Change password error:', error)
+      throw error
+    }
+  }
 
   return {
     user,
@@ -97,5 +126,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     fetchCurrentUser,
     logout,
+    updateProfileData,
+    updateUserPassword
   }
 })

@@ -47,7 +47,12 @@ export const routes = [
         path: 'analytics',
         name: 'analytics',
         component: () => import('@/views/analytics/AnalyticsView.vue'),
-      }
+      },
+      {
+        path: '/profile',
+        name: 'profile',
+        component: () => import('@/views/profiles/ProfileView.vue')
+      },
     ],
   },
 

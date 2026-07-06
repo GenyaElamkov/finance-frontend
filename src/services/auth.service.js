@@ -39,7 +39,27 @@ const AuthService = {
     // Ручка из users.py: @router.get("/me")
     const res = await apiClient.get('/users/me');
     return res.data;
-  }
+  },
+
+  /**
+   * Обновление данных профиля
+   * @param {Object} payload - Данные для обновления профиля
+   */
+  async updateProfile(payload) {
+    const response = await apiClient.patch('/users/me', payload)
+    return response.data
+  },
+
+  /**
+   * Смена пароля
+   * @param {Object} payload - Данные для смены пароля
+   * @returns 
+   */
+  async changePassword(payload) {
+    const response = await apiClient.patch('/users/change-password', payload)
+    return response.data
+  },
+
 };
 
 export default AuthService;

@@ -69,15 +69,23 @@ const handleLogout = () => {
       </div>
 
       <div class="space-y-3.5">
-        <div v-if="authStore.user" class="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-100">
+        <router-link 
+          v-if="authStore.user" 
+          :to="{ name: 'profile' }"
+          class="flex items-center space-x-3 px-4 py-3 rounded-2xl border transition-all block text-left"
+          :class="route.name === 'profile'
+            ? 'bg-indigo-50 border-indigo-200 text-indigo-600 font-semibold shadow-sm'
+            : 'bg-gray-50 border-gray-100 text-gray-800 hover:bg-gray-100 hover:border-gray-200'"
+        >
           <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-sm uppercase shrink-0">
-            {{ authStore.user?.username?.charAt(0) || 'U' }}
+            {{ (authStore.user?.username || authStore.user?.full_name || 'U').charAt(0) }}
           </div>
-          <div class="truncate">
-            <span class="text-xs text-gray-400 block">Вы вошли как</span>
-            <span class="text-sm font-semibold text-gray-800 block truncate">{{ authStore.user?.full_name || authStore.user?.email }}</span>
+          <div class="truncate flex-1">
+            <span class="text-[10px] text-gray-400 block font-normal">Настройки профиля</span>
+            <span class="text-sm font-semibold block truncate">{{ authStore.user?.full_name || authStore.user?.username || authStore.user?.email }}</span>
           </div>
-        </div>
+          <span class="text-gray-400 text-xs">⚙️</span>
+        </router-link>
 
         <button 
           @click="handleLogout"
@@ -119,15 +127,24 @@ const handleLogout = () => {
         </div>
 
         <div class="space-y-3 border-t border-gray-100 pt-4">
-          <div v-if="authStore.user" class="flex items-center space-x-3 px-4 py-2.5 bg-gray-50 rounded-xl border border-gray-100 mx-1">
+          <router-link 
+            v-if="authStore.user" 
+            :to="{ name: 'profile' }"
+            @click="isMobileMenuOpen = false"
+            class="flex items-center space-x-3 px-4 py-2.5 rounded-xl border transition-all block text-left mx-1"
+            :class="route.name === 'profile'
+              ? 'bg-indigo-50 border-indigo-200 text-indigo-600 font-semibold'
+              : 'bg-gray-50 border-gray-100 text-gray-800'"
+          >
             <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center text-sm uppercase shrink-0">
-              {{ authStore.user?.username?.charAt(0) || 'U' }}
+              {{ (authStore.user?.username || authStore.user?.full_name || 'U').charAt(0) }}
             </div>
-            <div class="truncate">
-              <span class="text-[10px] text-gray-400 block">Аккаунт</span>
-              <span class="text-sm font-semibold text-gray-800 block truncate">{{ authStore.user?.full_name || authStore.user?.email }}</span>
+            <div class="truncate flex-1">
+              <span class="text-[9px] text-gray-400 block font-normal">Настройки аккаунта</span>
+              <span class="text-sm font-semibold block truncate">{{ authStore.user?.full_name || authStore.user?.username || authStore.user?.email }}</span>
             </div>
-          </div>
+            <span class="text-gray-400 text-xs">⚙️</span>
+          </router-link>
 
           <button 
             @click="handleLogout"
@@ -148,13 +165,3 @@ const handleLogout = () => {
 
   </div>
 </template>
-
-<style scoped>
-.animate-slide-in {
-  animation: slideRight 0.2s ease-out forwards;
-}
-@keyframes slideRight {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-</style>
