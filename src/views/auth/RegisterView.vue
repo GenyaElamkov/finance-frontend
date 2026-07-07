@@ -28,11 +28,12 @@ const handleRegister = async () => {
       password: password.value
     })
   } catch (error) {
-    // Обработка ошибок валидации FastAPI или уникальности email (400 Bad Request)
-    if (error.response && error.response.data?.detail) {
-      errorMessage.value = error.response.data.detail
+    if (error.response?.status === 409) {
+      errorMessage.value = 'Этот email уже зарегистрирован. Используйте другой.'
+    } else if (error.response?.status === 422) {
+      errorMessage.value = 'Проверьте правильность email и пароля (мин. 8 символов, буквы и цифры).'
     } else {
-      errorMessage.value = 'Ошибка при регистрации. Возможно, такой email уже занят.'
+      errorMessage.value = 'Не удалось создать аккаунт. Попробуйте позже.'
     }
   }
 }
