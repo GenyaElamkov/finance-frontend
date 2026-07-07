@@ -4,16 +4,14 @@ import AuthService from '@/services/auth.service'
 import router from '@/routers'
 
 export const useAuthStore = defineStore('auth', () => {
-  // --- State (Состояние) ---
+  // Состояние
   const user = ref(null)
   const accessToken = ref(localStorage.getItem('access_token') || null)
   const refreshToken = ref(localStorage.getItem('refresh_token') || null)
   const isLoading = ref(false)
 
-  // --- Getters (Вычисляемые свойства) ---
+  // Вычисляемые свойства
   const isAuthenticated = computed(() => !!accessToken.value)
-
-  // --- Actions (Методы) ---
 
   /**
    * Логин пользователя
@@ -116,6 +114,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Удаление аккаунта
+   * 
+   */ 
+  async function deleteAccount() {
+    try {
+      await AuthService.deleteUser(user.value.id)
+      logout()
+    } catch (error) {
+      console.error('Delete account error:', error)
+      throw error
+    }
+  }
+
   return {
     user,
     accessToken,
@@ -127,6 +139,7 @@ export const useAuthStore = defineStore('auth', () => {
     fetchCurrentUser,
     logout,
     updateProfileData,
-    updateUserPassword
+    updateUserPassword,
+    deleteAccount,
   }
 })

@@ -19,6 +19,11 @@ const passwordForm = reactive({
 // Статусы процессов
 const isProfileLoading = ref(false)
 const isPasswordLoading = ref(false)
+const isDeleteLoading = ref(false)
+
+// Состояние модального окна удаления
+const isDeleteModalOpen = ref(false)
+const deleteConfirmationText = ref('')
 
 // Управление всплывающими уведомлениями (тостами/сообщениями)
 const statusMessage = ref({ text: '', type: '' }) // type: 'success' | 'error'
@@ -47,14 +52,12 @@ const handleUpdateProfile = async () => {
   
   isProfileLoading.value = true
   try {
-    // Отправляем данные на бэкенд через Pinia-стор
     await authStore.updateProfileData({ 
       full_name: profileForm.full_name, 
       email: profileForm.email,
     })
     showMessage('Личные данные успешно обновлены!')
   } catch (error) {
-    // Если бэкенд вернет ошибку (например, email занят), мы её покажем
     showMessage('Ошибка при обновлении профиля', 'error')
   } finally {
     isProfileLoading.value = false
@@ -86,7 +89,6 @@ const handleChangePassword = async () => {
     })
     showMessage('Пароль успешно изменен!')  
     
-    // Сбрасываем форму пароля
     passwordForm.old_password = ''
     passwordForm.new_password = ''
     passwordForm.confirm_password = ''
@@ -96,10 +98,27 @@ const handleChangePassword = async () => {
     isPasswordLoading.value = false
   }
 }
+
+// Функция окончательного деактивирования / удаления аккаунта
+const handleDeleteAccount = async () => {
+  if (deleteConfirmationText.value !== 'УДАЛИТЬ') {
+    return
+  }
+
+  isDeleteLoading.value = true
+  try {
+    await authStore.deleteAccount()
+    isDeleteModalOpen.value = false
+  } catch (error) {
+    showMessage('Не удалось удалить аккаунт. Попробуйте позже.', 'error')
+  } finally {
+    isDeleteLoading.value = false
+  }
+}
 </script>
 
 <template>
-  <div class="space-y-6 max-w-4xl mx-auto">
+  <div class="space-y-6 max-w-4xl mx-auto pb-12">
     <div>
       <h1 class="text-2xl font-bold text-gray-900">Настройки профиля</h1>
       <p class="text-sm text-gray-500 mt-1">Управление личными данными и параметрами безопасности аккаунта.</p>
@@ -226,6 +245,69 @@ const handleChangePassword = async () => {
       </div>
 
     </div>
+
+    <div class="bg-white p-6 rounded-2xl border border-red-100 bg-red-50/20 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-start space-x-3">
+          <div class="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-lg shrink-0">
+            ⚠️
+          </div>
+          <div>
+            <h2 class="font-bold text-gray-900 text-base">Опасная зона</h2>
+            <p class="text-sm text-gray-500 mt-0.5">Удаление или деактивация вашего аккаунта. Это действие нельзя отменить, все ваши транзакции и счета будут удалены навсегда.</p>
+          </div>
+        </div>
+        <button 
+          @click="isDeleteModalOpen = true"
+          type="button"
+          class="px-5 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white text-sm font-bold rounded-xl transition-all shadow-sm shrink-0"
+        >
+          Удалить аккаунт
+        </button>
+      </div>
+    </div>
+
+    <div v-if="isDeleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div @click="isDeleteModalOpen = false" class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"></div>
+      
+      <div class="relative bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4 animate-modal-in">
+        <div class="text-center space-y-2">
+          <span class="text-4xl">🚨</span>
+          <h3 class="text-xl font-bold text-gray-900">Вы абсолютно уверены?</h3>
+          <p class="text-sm text-gray-500">
+            Это приведет к безвозвратному удалению профиля. Для подтверждения введите слово <span class="font-bold text-red-600 select-none">УДАЛИТЬ</span> ниже:
+          </p>
+        </div>
+
+        <div>
+          <input 
+            v-model="deleteConfirmationText"
+            type="text" 
+            placeholder="Введите слово заглавными буквами"
+            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-red-500 focus:ring-2 focus:ring-red-100 transition-all text-center font-bold tracking-wider text-gray-800"
+          />
+        </div>
+
+        <div class="flex space-x-3 pt-2">
+          <button 
+            @click="isDeleteModalOpen = false"
+            type="button"
+            class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm rounded-xl transition-colors"
+          >
+            Отмена
+          </button>
+          <button 
+            @click="handleDeleteAccount"
+            type="button"
+            :disabled="deleteConfirmationText !== 'УДАЛИТЬ' || isDeleteLoading"
+            class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-bold text-sm rounded-xl transition-colors disabled:cursor-not-allowed"
+          >
+            {{ isDeleteLoading ? 'Удаление...' : 'Да, удалить' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -235,5 +317,14 @@ const handleChangePassword = async () => {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* Анимация плавного появления модалки */
+.animate-modal-in {
+  animation: modalScale 0.2s ease-out forwards;
+}
+@keyframes modalScale {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 </style>

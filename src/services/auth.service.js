@@ -60,6 +60,15 @@ const AuthService = {
     return response.data
   },
 
+  /**
+   * Удаление пользователя
+   * @param {*} userId    
+   */
+  async deleteUser(userId) {
+    const response = await apiClient.delete(`/users/${userId}`);
+    return response.data;
+  }
+
 };
 
 export default AuthService;
