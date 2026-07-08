@@ -20,7 +20,6 @@ const handleSubmit = async () => {
   }
 
   try {
-    // Вызываем метод из Pinia стора, который мы написали ранее
     await authStore.login(email.value, password.value)
   } catch (error) {
     // Обработка ошибок от FastAPI бэкенда
@@ -78,6 +77,14 @@ const handleSubmit = async () => {
               <label for="password" class="block text-sm font-medium leading-6 text-gray-900">
                 Пароль
               </label>
+              <div class="text-sm">
+                <router-link 
+                  :to="{ name: 'forgot-password' }" 
+                  class="font-semibold text-indigo-600 hover:text-indigo-500"
+                >
+                  Забыли пароль?
+                </router-link>
+              </div>
             </div>
             <div class="mt-2">
               <input

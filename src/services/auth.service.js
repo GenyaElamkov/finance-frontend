@@ -67,7 +67,17 @@ const AuthService = {
   async deleteUser(userId) {
     const response = await apiClient.delete(`/users/${userId}`);
     return response.data;
-  }
+  },
+
+  async forgotPassword(email) {
+    const response = await apiClient.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async resetPassword(token, password) {
+    const response = await apiClient.post('/auth/reset-password', { token, password: password });
+    return response.data;
+  },
 
 };
 

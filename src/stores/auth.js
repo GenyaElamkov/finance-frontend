@@ -127,6 +127,35 @@ export const useAuthStore = defineStore('auth', () => {
       throw error
     }
   }
+  /**
+   * Восстановление пароля
+   */
+  async function forgotPassword(email) {
+  isLoading.value = true
+    try {
+      return await AuthService.forgotPassword(email)
+    } catch (error) {
+      console.error('Forgot password error:', error)
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+  
+  /**
+   * Reset Password
+   */
+  async function resetPassword(token, password) {
+    isLoading.value = true
+    try {
+      return await AuthService.resetPassword(token, password)
+    } catch (error) {
+      console.error('Reset password error:', error)
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
 
   return {
     user,
@@ -141,5 +170,7 @@ export const useAuthStore = defineStore('auth', () => {
     updateProfileData,
     updateUserPassword,
     deleteAccount,
+    forgotPassword,
+    resetPassword,
   }
 })
