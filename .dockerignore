@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+.git
+.gigacode
+.gitattributes
+*.log
+npm-debug.log*
+.DS_Store
+coverage
+__screenshots__
+.vscode
+.idea
+.env
+.env.*.local
