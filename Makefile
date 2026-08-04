@@ -30,27 +30,6 @@ dev-logs: ## Логи dev-контейнера
 dev-shell: ## Зайти в shell dev-контейнера
 	$(COMPOSE_DEV) exec frontend sh
 
-## ---- Продакшен (docker-compose.yml) ----
-
-prod: prod-build up ## Собрать и запустить прод-окружение
-
-prod-build: ## Собрать прод-образ
-	$(COMPOSE_PROD) build
-
-up: ## Поднять прод-контейнер в фоне
-	$(COMPOSE_PROD) up -d
-
-down: ## Остановить и удалить прод-контейнер
-	$(COMPOSE_PROD) down
-
-restart: down up ## Перезапустить прод-контейнер
-
-logs: ## Логи прод-контейнера
-	$(COMPOSE_PROD) logs -f
-
-shell: ## Зайти в shell прод-контейнера (nginx)
-	$(COMPOSE_PROD) exec frontend sh
-
 ## ---- Общее ----
 
 ps: ## Список запущенных контейнеров проекта
