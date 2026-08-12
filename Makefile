@@ -3,7 +3,6 @@ COMPOSE_DEV  := docker compose -f docker-compose.dev.yml
 
 .PHONY: help \
 	dev dev-build dev-up dev-down dev-restart dev-logs dev-shell \
-	prod prod-build up down restart logs shell \
 	ps clean prune lint format
 
 help: ## Показать список команд

@@ -38,19 +38,18 @@ apiClient.interceptors.response.use(
           throw new Error('No refresh token available');
         }
 
-        // Делаем запрос на обновление access-токена (ручка из твоего auth.py)
-        // Важно: используем чистый axios, а не apiClient, чтобы не зациклиться
+        // Делаем запрос на обновление access-токена
         const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/refresh-access-token`, {
           refresh_token: refreshToken
         });
 
-        // Твой бэкенд возвращает dict с новыми токенами
+        // Возвращаем dict с новыми токенами
         const newAccessToken = response.data.access_token;
         
         // Сохраняем новый токен
         localStorage.setItem('access_token', newAccessToken);
 
-        // Обновляем заголовок в упавшем запросе и повторяем его
+        // Обновляем заголовки в упавшем запросе и повторяем его
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return apiClient(originalRequest);
         

@@ -1,44 +1,92 @@
-# finance-frontend
+# PocketKeeper — Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+Веб-клиент для **PocketKeeper** — приложения для ведения семейного бюджета: счета, категории, транзакции и аналитика расходов/доходов.
 
-## Recommended IDE Setup
+Это фронтенд-часть проекта (Vue 3 + Vite). Backend — отдельный репозиторий на FastAPI + PostgreSQL, взаимодействие идёт через REST API.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Возможности
 
-## Recommended Browser Setup
+- Регистрация и авторизация (JWT: access + refresh токены, восстановление пароля)
+- Управление счетами (наличные, карты, вклады и т.д.)
+- Категории доходов и расходов
+- Учёт транзакций с быстрым добавлением дохода/расхода
+- Аналитика: сводка по счетам, категориям и динамике за период (Future)
+- Профиль пользователя
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## Стек
 
-## Customize configuration
+- **Vue 3** (Composition API) + **Vite**
+- **Pinia** — управление состоянием
+- **Vue Router** — маршрутизация, защищённые роуты
+- **Axios** — работа с API, интерцепторы для обновления токена
+- **Tailwind CSS** — стилизация
+- **Docker / Docker Compose** — сборка и запуск (dev и prod)
+- **Nginx** — раздача статики в проде, SPA fallback, gzip, кеширование ассетов
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## Архитектура
 
-## Project Setup
+Фронтенд разворачивается отдельно от бэкенда и рассчитан на работу за общим reverse-proxy (nginx), который отдаёт фронт на `/` и проксирует `/api/` на backend — это убирает необходимость в CORS. Адрес API задаётся один раз на этапе сборки образа через `VITE_API_URL` (Vite инлайнит `import.meta.env.*` в бандл во время `build`, поэтому runtime `.env` на уже собранный образ не влияет).
 
-```sh
-npm install
+## Быстрый старт
+
+### Docker (dev, с hot-reload)
+
+```bash
+make dev          # сборка + запуск dev-контейнера
+make dev-logs      # логи
+make dev-shell     # зайти внутрь контейнера
+make dev-down       # остановить
 ```
 
-### Compile and Hot-Reload for Development
+Полный список команд: `make help`.
 
-```sh
-npm run dev
+### Прод-сборка
+
+```bash
+docker compose -f docker-compose.yml build --build-arg VITE_API_URL=https://example.com/api/v1
+docker compose -f docker-compose.yml up -d
 ```
 
-### Compile and Minify for Production
+Контейнер собирает статику через multi-stage Dockerfile и отдаёт её через Nginx (порт `80`, наружу пробрасывается `8080`).
 
-```sh
-npm run build
+> `docker-compose.yml` из этого репозитория годится для локальной сборки/проверки прод-образа. Реальный деплой (frontend + backend + edge-nginx одним стеком) оркестрируется из отдельного репозитория [`finance-infra`](#связанные-репозитории).
+
+## Переменные окружения
+
+| Переменная      | Описание                                   | По умолчанию                      |
+|-----------------|---------------------------------------------|------------------------------------|
+| `VITE_API_URL`  | Базовый URL backend API                     | `http://127.0.0.1:8000/api/v1`     |
+
+## Структура проекта
+
+```
+src/
+├── assets/         # глобальные стили
+├── components/     # переиспользуемые компоненты (в т.ч. ui/)
+├── layouts/        # AuthLayout, MainLayout
+├── views/          # страницы: auth, dashboard, accounts, categories,
+│                   # transactions, analytics, profiles, errors
+├── routers/        # конфигурация Vue Router
+├── services/        # обёртки над Axios для запросов к API
+└── stores/          # Pinia-хранилища (auth, accounts, categories,
+                      # transactions, analytic)
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Скрипты
 
-```sh
-npm run lint
-```
+| Команда              | Что делает                          |
+|-----------------------|---------------------------------------|
+| `npm run dev`          | Запуск dev-сервера с hot-reload       |
+| `npm run build`        | Прод-сборка в `dist/`                 |
+| `npm run preview`      | Локальный просмотр прод-сборки        |
+| `npm run lint`         | ESLint + oxlint с автофиксом          |
+| `npm run format`       | Форматирование кода Prettier          |
+
+## Связанные репозитории
+
+- Backend (FastAPI + PostgreSQL) — *ссылка на репозиторий*
+- [`finance-infra`](https://github.com/GenyaElamkov/finance-infra.git) — общий docker-compose для прод-деплоя (frontend + backend + edge nginx)
+
+## Лицензия
+ 
+Проект распространяется под лицензией **MIT** — подробности в файле [LICENSE](LICENSE).
