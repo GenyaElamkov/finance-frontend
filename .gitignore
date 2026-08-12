@@ -39,6 +39,5 @@ coverage
 __screenshots__/
 
 # Vite
-*.timestamp-*-*.mjs
-
+*.timestamp-*-*.mjs 
 .env
