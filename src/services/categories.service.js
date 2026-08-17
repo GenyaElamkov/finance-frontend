@@ -15,7 +15,7 @@ const CategoriesService = {
     
     // PUT /categories/{id} - Обновить категорию (CategoryUpdate)
     async update(id, categoryData) {
-        const response = await apiClient.put(`/categories/${id}/`, categoryData);
+        const response = await apiClient.put(`/categories/${id}`, categoryData);
         return response.data;
     },
 
