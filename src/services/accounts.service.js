@@ -13,12 +13,12 @@ const AccountsService = {
     },
     // PUT /accounts/{id} - Обновить счет (AccountUpdate)
     async update(id, accountData) {
-        const response = await apiClient.put(`/accounts/${id}/`, accountData);
+        const response = await apiClient.put(`/accounts/${id}`, accountData);
         return response.data;
     },
     // DELETE /accounts/{id} - Удалить счет
     async delete(id) {
-        const response = await apiClient.delete(`/accounts/${id}/`);
+        const response = await apiClient.delete(`/accounts/${id}`);
         return response.data;
     }
 };

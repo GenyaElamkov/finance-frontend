@@ -11,7 +11,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
 
-  // 1. Проверяем, если у нас есть токен, но профиль пользователя еще не загружен
+  // Проверяем, если у нас есть токен, но профиль пользователя еще не загружен
   if (authStore.accessToken && !authStore.user) {
     try {
       await authStore.fetchCurrentUser();
@@ -22,11 +22,11 @@ router.beforeEach(async (to, from, next) => {
 
   const isUserAuthenticated = authStore.isAuthenticated;
 
-  // 2. Если маршрут требует авторизации, а пользователь НЕ авторизован
+  // Если маршрут требует авторизации, а пользователь НЕ авторизован
   if (to.meta.requiresAuth && !isUserAuthenticated) {
     next({ name: 'login' });
   } 
-  // 3. Если пользователь авторизован, но пытается зайти на Login/Register
+  // Если пользователь авторизован, но пытается зайти на Login/Register
   else if ((to.name === 'login' || to.name === 'register') && isUserAuthenticated) {
     next({ name: 'dashboard' });
   } 
