@@ -94,7 +94,7 @@ onUnmounted(() => {
   }
 })
 
-// Переключение между вкладками "Транзакции" и "Переводы между своими картами"
+// Переключение между вкладками "Транзакции" и "Переводы между своими счетами"
 const switchToTransfersView = () => {
   viewMode.value = 'transfers'
   if (transfersStore.listData.items.length === 0) {
@@ -376,7 +376,7 @@ const formatTransferAmount = (transfer) => {
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">
-          {{ viewMode === 'transactions' ? 'Транзакции' : 'Переводы между своими картами' }}
+          {{ viewMode === 'transactions' ? 'Транзакции' : 'Переводы между своими счетами' }}
         </h1>
         <p class="text-sm text-gray-500 mt-1">
           {{ viewMode === 'transactions'

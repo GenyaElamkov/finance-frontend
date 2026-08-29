@@ -30,7 +30,7 @@ const handleLogout = () => {
     <header class="md:hidden w-full flex items-center justify-between bg-white px-4 py-3.5 border-b border-gray-200 sticky top-0 z-30 shadow-sm">
       <router-link :to="{ name: 'dashboard' }" class="flex items-center space-x-2 active:opacity-80">
         <span class="text-2xl">🪙</span>
-        <span class="font-black text-lg tracking-tight bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">FinTrack</span>
+        <span class="font-black text-lg tracking-tight bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">Финансы+</span>
       </router-link>
       
       <button 
@@ -48,7 +48,7 @@ const handleLogout = () => {
         <router-link :to="{ name: 'dashboard' }" class="flex items-center space-x-3 px-2 hover:opacity-90 transition-opacity">
           <span class="text-3xl">🪙</span>
           <span class="font-black text-xl tracking-tight bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">
-            FinTrack
+            Финансы+
           </span>
         </router-link>
 

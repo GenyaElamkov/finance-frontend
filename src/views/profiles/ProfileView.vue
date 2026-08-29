@@ -168,7 +168,7 @@ const handleDeleteAccount = async () => {
               <input 
                 v-model="profileForm.email"
                 type="email" 
-                placeholder="example@fintrack.ru"
+                placeholder="example@PocketKeeper.ru"
                 class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all text-gray-800 font-medium"
               />
             </div>
