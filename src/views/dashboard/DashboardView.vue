@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router' // Импортируем роутер для навигации
+import { useRouter } from 'vue-router'
 import { useAccountsStore } from '@/stores/accounts'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useCategoriesStore } from '@/stores/categories'
@@ -52,8 +52,10 @@ const expensesByCategory = computed(() => {
   const now = new Date()
   const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   
+  const items = transactionsStore.listData?.items || []
+
   // Фильтруем: только расходы И только за текущий месяц
-  const currentMonthExpenses = transactionsStore.listData.items.filter(t => {
+  const currentMonthExpenses = items.filter(t => {
     const isExpense = t.transaction_type === 'расходы'
     const isInCurrentMonth = t.transaction_date && t.transaction_date.startsWith(currentYearMonth)
     return isExpense && isInCurrentMonth
@@ -124,8 +126,7 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
         </button>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div class="bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 rounded-2xl text-white shadow-sm border border-indigo-500 relative overflow-hidden">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5"> <div class="bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 rounded-2xl text-white shadow-sm border border-indigo-500 relative overflow-hidden">
           <div class="absolute right-3 bottom-1 text-7xl opacity-10 pointer-events-none">💰</div>
           <span class="text-xs font-medium text-indigo-200 uppercase tracking-wider block">Общий баланс</span>
           <span class="text-2xl sm:text-3xl font-black block mt-2 tracking-tight">

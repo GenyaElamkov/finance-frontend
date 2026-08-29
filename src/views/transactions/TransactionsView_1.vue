@@ -4,8 +4,6 @@ import { useRoute } from 'vue-router'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useAccountsStore } from '@/stores/accounts'
 import { useCategoriesStore } from '@/stores/categories'
-import { useTransfersStore } from '@/stores/transfers'
-import TransferForm from '@/views/transfers/TransfersView.vue'
 
 // Настройка роутера
 const route = useRoute()
@@ -14,10 +12,6 @@ const route = useRoute()
 const transactionsStore = useTransactionsStore()
 const accountsStore = useAccountsStore()
 const categoriesStore = useCategoriesStore()
-const transfersStore = useTransfersStore()
-
-// Режим отображения: обычные операции или переводы между своими картами
-const viewMode = ref('transactions') // 'transactions' | 'transfers'
 
 // Состояние формы создания
 const type = ref('расходы') 
@@ -56,16 +50,8 @@ const pageSize = ref(20)
 const isDescSort = ref(false)
 let observer = null
 
-// Пагинация для переводов между своими картами (своя, независимая от транзакций)
-const transfersPage = ref(1)
-const transfersPageSize = ref(20)
-let transfersObserver = null
-
 const hasMore = computed(() => transactionsStore.hasMore())
 const isLoading = computed(() => transactionsStore.isLoading)
-
-const hasMoreTransfers = computed(() => transfersStore.hasMore())
-const isLoadingTransfers = computed(() => transfersStore.isLoading)
 
 const getAccountName = (id) => accountsStore.items.find(a => a.id === id)?.name || `Счет #${id}`
 const getCategoryName = (id) => categoriesStore.items.find(c => c.id === id)?.name || 'Без категории'
@@ -88,83 +74,7 @@ onUnmounted(() => {
     observer.disconnect()
     observer = null
   }
-  if (transfersObserver) {
-    transfersObserver.disconnect()
-    transfersObserver = null
-  }
 })
-
-// Переключение между вкладками "Транзакции" и "Переводы между своими картами"
-const switchToTransfersView = () => {
-  viewMode.value = 'transfers'
-  if (transfersStore.listData.items.length === 0) {
-    loadInitialTransfers()
-  }
-  nextTick(() => {
-    initTransfersInfiniteScroll()
-  })
-}
-
-const switchToTransactionsView = () => {
-  viewMode.value = 'transactions'
-  nextTick(() => {
-    initInfiniteScroll()
-  })
-}
-
-// Загрузка первой страницы переводов
-const loadInitialTransfers = () => {
-  transfersPage.value = 1
-  transfersStore.fetchTransfers({ page: transfersPage.value, page_size: transfersPageSize.value }, false)
-}
-
-// Догрузка следующей страницы переводов
-const loadMoreTransfers = async () => {
-  if (isLoadingTransfers.value || !hasMoreTransfers.value) return
-  transfersPage.value++
-  await transfersStore.fetchTransfers({ page: transfersPage.value, page_size: transfersPageSize.value }, true)
-}
-
-// Бесконечная прокрутка для списка переводов
-const initTransfersInfiniteScroll = () => {
-  if (transfersObserver) {
-    transfersObserver.disconnect()
-    transfersObserver = null
-  }
-
-  transfersObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && hasMoreTransfers.value && !isLoadingTransfers.value) {
-      loadMoreTransfers()
-    }
-  }, {
-    root: null,
-    rootMargin: '200px',
-    threshold: 0.1
-  })
-
-  nextTick(() => {
-    const trigger = document.getElementById('transfers-infinite-scroll-trigger')
-    if (trigger) transfersObserver.observe(trigger)
-  })
-}
-
-// После успешного создания перевода — обновляем список сверху
-const handleTransferCreated = () => {
-  nextTick(() => {
-    initTransfersInfiniteScroll()
-  })
-}
-
-// Удаление перевода
-const handleDeleteTransfer = async (id) => {
-  if (confirm('Удалить этот перевод? Баланс обоих счетов будет пересчитан.')) {
-    try {
-      await transfersStore.removeTransfer(id)
-    } catch (err) {
-      alert('Не удалось удалить перевод.')
-    }
-  }
-}
 
 // Методы для работы с пагинацией и сортировкой
 const getPaginationParams = () => {
@@ -360,50 +270,16 @@ const formatDate = (dateString) => {
   return `${day}.${month}.${year}`
 }
 
-// Форматирование суммы перевода (валюта берется у счета списания)
-const formatTransferAmount = (transfer) => {
-  const currency = accountsStore.items.find(a => a.id === transfer.from_account_id)?.currency || 'RUB'
-  return Number(transfer.amount).toLocaleString('ru-RU', {
-    style: 'currency',
-    currency
-  })
-}
-
 </script>
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">
-          {{ viewMode === 'transactions' ? 'Транзакции' : 'Переводы между своими картами' }}
-        </h1>
-        <p class="text-sm text-gray-500 mt-1">
-          {{ viewMode === 'transactions'
-            ? 'Журнал доходов и расходов. Все изменения мгновенно влияют на баланс счетов.'
-            : 'История переводов между своими счетами. В общий журнал транзакций они не попадают.' }}
-        </p>
-      </div>
-
-      <div class="inline-flex rounded-lg bg-gray-100 p-0.5 shrink-0">
-        <button
-          @click="switchToTransactionsView"
-          type="button"
-          :class="[viewMode === 'transactions' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-900', 'px-3 py-1.5 text-xs font-medium rounded-md transition-all']"
-        >
-          📝 Транзакции
-        </button>
-        <button
-          @click="switchToTransfersView"
-          type="button"
-          :class="[viewMode === 'transfers' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-900', 'px-3 py-1.5 text-xs font-medium rounded-md transition-all']"
-        >
-          🔄 Перевод между своими картами
-        </button>
-      </div>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Транзакции</h1>
+      <p class="text-sm text-gray-500 mt-1">
+        Журнал доходов и расходов. Все изменения мгновенно влияют на баланс счетов.
+      </p>
     </div>
-
-    <template v-if="viewMode === 'transactions'">
 
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
       <div class="flex items-center justify-between mb-4">
@@ -724,92 +600,5 @@ const formatTransferAmount = (transfer) => {
         </div>
       </div>
     </div>
-
-    </template>
-
-    <template v-else>
-
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">🔄 Новый перевод</h2>
-      <TransferForm submit-label="🔄 Выполнить перевод" @success="handleTransferCreated" />
-    </div>
-
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <div v-if="isLoadingTransfers && transfersStore.listData.items.length === 0" class="flex justify-center py-12">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
-
-      <div v-else-if="transfersStore.listData.items.length === 0" class="text-center py-12 text-gray-500">
-        У вас еще не было переводов между своими картами.
-      </div>
-
-      <div v-else>
-        <div class="hidden sm:block overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
-            <thead class="bg-gray-50 text-gray-500 uppercase text-xs font-semibold tracking-wider">
-              <tr>
-                <th class="px-4 py-4">Откуда</th>
-                <th class="px-4 py-4">Куда</th>
-                <th class="px-4 py-4">Комментарий</th>
-                <th class="px-4 py-4">Дата</th>
-                <th class="px-4 py-4 text-right">Сумма</th>
-                <th class="px-4 py-4 text-center">Действия</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 text-gray-700">
-              <tr v-for="tr in transfersStore.listData.items" :key="tr.id" class="hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-3 whitespace-nowrap font-medium">💳 {{ getAccountName(tr.from_account_id) }}</td>
-                <td class="px-4 py-3 whitespace-nowrap font-medium">💳 {{ getAccountName(tr.to_account_id) }}</td>
-                <td class="px-4 py-3 max-w-xs truncate text-gray-400">{{ tr.description || '—' }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-gray-500">{{ formatDate(tr.transfer_date) }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-right font-bold text-indigo-600">{{ formatTransferAmount(tr) }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-center">
-                  <button @click="handleDeleteTransfer(tr.id)" class="text-gray-400 hover:text-red-500 transition-colors px-2 py-1 rounded">
-                    🗑️
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="block sm:hidden divide-y divide-gray-100">
-          <div v-for="tr in transfersStore.listData.items" :key="tr.id" class="p-4 flex flex-col space-y-2">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center space-x-2 font-medium text-gray-900 text-sm">
-                <span>💳 {{ getAccountName(tr.from_account_id) }}</span>
-                <span class="text-gray-400">→</span>
-                <span>💳 {{ getAccountName(tr.to_account_id) }}</span>
-              </div>
-              <span class="font-bold text-lg text-indigo-600">{{ formatTransferAmount(tr) }}</span>
-            </div>
-            <div class="flex justify-between items-center text-xs text-gray-500">
-              <div>
-                <span class="text-gray-400">{{ formatDate(tr.transfer_date) }}</span>
-                <p v-if="tr.description" class="text-gray-400 mt-1 italic">«{{ tr.description }}»</p>
-              </div>
-              <button @click="handleDeleteTransfer(tr.id)" class="text-red-400 active:text-red-600 p-2 text-sm">
-                🗑️
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div id="transfers-infinite-scroll-trigger" class="w-full py-6 flex justify-center items-center bg-gray-50 border-t border-gray-100">
-          <div v-if="isLoadingTransfers" class="flex items-center space-x-2 text-sm text-gray-500">
-            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
-            <span>Загрузка следующих переводов...</span>
-          </div>
-          <div v-else-if="!hasMoreTransfers && transfersStore.listData.items.length > 0" class="text-xs text-gray-400 italic">
-            ✨ Вы просмотрели всю историю переводов ({{ transfersStore.listData.total }})
-          </div>
-          <div v-else-if="!isLoadingTransfers" class="text-xs text-gray-400">
-            ↓ Прокрутите для загрузки следующих переводов
-          </div>
-        </div>
-      </div>
-    </div>
-
-    </template>
   </div>
 </template>
