@@ -11,5 +11,7 @@ coverage
 __screenshots__
 .vscode
 .idea
+
 .env
-.env.*.local
+.env.*
+!.env.example
