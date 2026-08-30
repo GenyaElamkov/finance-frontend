@@ -208,7 +208,7 @@ const handleDeleteAccount = async (id) => {
           :key="account.id"
           class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group"
         >
-          <div class="absolute top-0 left-0 right-0 h-1.5 "></div>
+          <div class="absolute top-0 left-0 right-0 h-1.5"></div>
           
           <div v-if="editingId === account.id" class="space-y-4 w-full">
             <div class="flex items-center justify-between border-b pb-2 mb-2">
@@ -255,7 +255,7 @@ const handleDeleteAccount = async (id) => {
               </div>
             </div>
           </div>
-
+          <!-- Карточка счета -->
           <template v-else>
             <div class="flex justify-between items-start mb-4">
               <div @click="startEdit(account)" class="cursor-pointer group/title flex-1" title="Кликните для редактирования счета">
@@ -264,7 +264,7 @@ const handleDeleteAccount = async (id) => {
                    <span class="text-[10px] ml-1.5 opacity-0 group-hover/title:opacity-100 transition-opacity">✏️</span>
                 </h3>
                 <span class="text-sm text-gray-500 capitalize flex items-center">
-                  {{ account.type }}
+                  {{ account.account_type }}
                 </span>
               </div>
               
