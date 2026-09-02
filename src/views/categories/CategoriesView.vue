@@ -11,6 +11,15 @@ const icon = ref('')
 const parentId = ref(null)
 const formError = ref('')
 
+// Подсказка для новых пользователей о том, как устроены категории.
+// Запоминаем в localStorage, чтобы не показывать повторно после того, как скрыли.
+const HINT_STORAGE_KEY = 'categoriesHintDismissed'
+const showHint = ref(localStorage.getItem(HINT_STORAGE_KEY) !== 'true')
+const dismissHint = () => {
+  showHint.value = false
+  localStorage.setItem(HINT_STORAGE_KEY, 'true')
+}
+
 // Состояние редактирования (храним ID категории, которую сейчас редактируют)
 const editingId = ref(null)
 const editName = ref('')
@@ -29,6 +38,13 @@ const rootCategories = computed(() => {
 // Функция для поиска подкатегорий конкретной родительской категории
 const getSubcategories = (parentCategoryId) => {
   return categoriesStore.items.filter(cat => cat.parent_id === parentCategoryId)
+}
+
+// Список категорий, которые можно назначить родителем для категории с id = categoryId.
+// Кандидатами могут быть только корневые категории (см. ограничение "2 уровня" на бэкенде),
+// сама категория из списка исключается.
+const availableParentsFor = (categoryId) => {
+  return rootCategories.value.filter(cat => cat.id !== categoryId)
 }
 
 // Включение режима редактирования и заполнение буферных переменных
@@ -86,7 +102,9 @@ const handleUpdateCategory = async (categoryId) => {
     // Выходим из режима редактирования при успехе
     editingId.value = null
   } catch (err) {
-    alert('Не удалось обновить категорию.')
+    // Бэкенд возвращает понятную причину отказа (например, "нельзя сделать родителем подкатегорию"),
+    // показываем её пользователю вместо общей фразы
+    alert(err?.response?.data?.detail || 'Не удалось обновить категорию.')
   }
 }
 
@@ -118,6 +136,25 @@ const handleDeleteCategory = async (id) => {
     <div>
       <h1 class="text-2xl font-bold text-gray-900">Категории</h1>
       <p class="text-sm text-gray-500 mt-1">Управляйте древовидной структурой категорий расходов и доходов</p>
+    </div>
+
+    <div v-if="showHint" class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-start gap-3">
+      <span class="text-xl leading-none">💡</span>
+      <div class="flex-1 text-sm text-indigo-900">
+        <p class="font-medium mb-1">Как устроены категории</p>
+        <ul class="list-disc list-inside space-y-0.5 text-indigo-800/90">
+          <li>Категория без родителя становится основной</li>
+          <li>Кликните на карточку категории или подкатегории, чтобы переименовать её, сменить иконку или назначить/сменить родителя</li>
+          <li>Вложенность — не более 2 уровней: категория → подкатегория (у подкатегории не может быть своих подкатегорий)</li>
+        </ul>
+      </div>
+      <button
+        @click="dismissHint"
+        class="text-indigo-400 hover:text-indigo-600 p-1 shrink-0"
+        title="Скрыть подсказку"
+      >
+        ✕
+      </button>
     </div>
 
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -206,11 +243,32 @@ const handleDeleteCategory = async (id) => {
           <div>
             <div class="flex items-center justify-between">
               
-              <div v-if="editingId === category.id" class="flex items-center space-x-2 w-full mr-2">
-                <EmojiPicker v-model="editIcon" class="w-10 border rounded p-1" />
-                <input v-model="editName" type="text" class="flex-1 border rounded p-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
-                <button @click="handleUpdateCategory(category.id)" class="text-green-600 hover:text-green-700 text-sm font-bold p-1">✔️</button>
-                <button @click="cancelEdit" class="text-gray-400 hover:text-gray-600 text-sm font-bold p-1">❌</button>
+              <div v-if="editingId === category.id" class="flex flex-col space-y-2 w-full mr-2">
+                <div class="flex items-center space-x-2 w-full">
+                  <EmojiPicker v-model="editIcon" class="w-10 border rounded p-1" />
+                  <input v-model="editName" type="text" class="flex-1 border rounded p-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                  <button @click="handleUpdateCategory(category.id)" class="text-green-600 hover:text-green-700 text-sm font-bold p-1">✔️</button>
+                  <button @click="cancelEdit" class="text-gray-400 hover:text-gray-600 text-sm font-bold p-1">❌</button>
+                </div>
+
+                <p v-if="hasSubcategories(category.id)" class="text-xs text-gray-400 italic">
+                  У категории есть подкатегории — сначала перенесите их, чтобы сделать эту категорию чьей-то подкатегорией
+                </p>
+                <div v-else class="relative">
+                  <select
+                    v-model="editParentId"
+                    class="w-full rounded-lg border-gray-300 ring-1 ring-gray-200 py-1.5 px-2 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none appearance-none bg-white pr-6"
+                  >
+                    <option :value="null">Основная (без родителя)</option>
+                    <option
+                      v-for="parent in availableParentsFor(category.id)"
+                      :key="parent.id"
+                      :value="parent.id"
+                    >
+                      {{ parent.icon || '🏷️' }} {{ parent.name }}
+                    </option>
+                  </select>
+                </div>
               </div>
 
               <div v-else @click="startEdit(category)" class="flex items-center space-x-3 truncate cursor-pointer title-edit-zone w-full" title="Кликните для редактирования">
@@ -218,7 +276,7 @@ const handleDeleteCategory = async (id) => {
                 <span class="font-bold text-gray-900 truncate text-base sm:text-lg group-hover:text-indigo-600 transition-colors">
                   {{ category.name }}
                 </span>
-                <span class="text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
+                <span class="text-xs text-gray-300 md:opacity-0 md:group-hover:opacity-100 transition-opacity">✏️</span>
               </div>
 
               <button 
@@ -242,12 +300,26 @@ const handleDeleteCategory = async (id) => {
                   :key="sub.id"
                   class="inline-flex items-center space-x-1 pl-2 pr-1.5 py-0.5 rounded-md text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200 group/sub transition-colors"
                 >
-                  <div v-if="editingId === sub.id" class="flex items-center space-x-1">
-                    <EmojiPicker v-model="editIcon" class="w-10 text-2xl" />
-
-                    <input v-model="editName" type="text" class="w-40 border rounded px-1 py-2.5 text-[14px] focus:outline-none" />
-                    <button @click="handleUpdateCategory(sub.id)" class="text-green-600 text-[10px]">✔️</button>
-                    <button @click="cancelEdit" class="text-gray-400 text-[10px]">❌</button>
+                  <div v-if="editingId === sub.id" class="flex flex-col space-y-1">
+                    <div class="flex items-center space-x-1">
+                      <EmojiPicker v-model="editIcon" class="w-10 text-2xl" />
+                      <input v-model="editName" type="text" class="w-40 border rounded px-1 py-2.5 text-[14px] focus:outline-none" />
+                      <button @click="handleUpdateCategory(sub.id)" class="text-green-600 text-[10px]">✔️</button>
+                      <button @click="cancelEdit" class="text-gray-400 text-[10px]">❌</button>
+                    </div>
+                    <select
+                      v-model="editParentId"
+                      class="w-full rounded border-gray-300 ring-1 ring-gray-200 py-1 px-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option :value="null">Сделать основной (без родителя)</option>
+                      <option
+                        v-for="parent in availableParentsFor(sub.id)"
+                        :key="parent.id"
+                        :value="parent.id"
+                      >
+                        {{ parent.icon || '🏷️' }} {{ parent.name }}
+                      </option>
+                    </select>
                   </div>
 
                   <div v-else @click.stop="startEdit(sub)" class="flex items-center space-x-1 cursor-pointer" title="Кликните для изменения подкатегории">                    

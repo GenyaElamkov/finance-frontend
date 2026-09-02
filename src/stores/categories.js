@@ -42,8 +42,8 @@ export const useCategoriesStore = defineStore('categories', () => {
         }
     }
     /**
-     * 
-     * @param {id}} id категории, которую нужно обновить
+     * Обновление категории по ID
+     * @param {id} id категории, которую нужно обновить
      * @param {categoryData} новые данные категории (например, { name: 'Новая категория' })
      */
     async function updateCategory(id, categoryData) {
@@ -74,6 +74,8 @@ export const useCategoriesStore = defineStore('categories', () => {
         } catch (err) {
             console.error(err);
             throw err;
+        } finally {
+            isLoading.value = false;
         }
     }
 
