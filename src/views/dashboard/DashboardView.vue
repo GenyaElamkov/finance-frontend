@@ -4,17 +4,20 @@ import { useRouter } from 'vue-router'
 import { useAccountsStore } from '@/stores/accounts'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useCategoriesStore } from '@/stores/categories'
+import { useAnalyticsStore } from '@/stores/analytic'
 
 const router = useRouter()
 const accountsStore = useAccountsStore()
 const transactionsStore = useTransactionsStore()
 const categoriesStore = useCategoriesStore()
+const analyticsStore = useAnalyticsStore()
 
 // При монтировании обновляем все данные с FastAPI
 onMounted(() => {
   accountsStore.fetchAccounts()
   transactionsStore.fetchTransactions()
   categoriesStore.fetchCategories()
+  analyticsStore.fetchMonthlySummaryByCategory()
 })
 
 // Метод для быстрого перехода к журналу с выбранным типом операции
@@ -44,51 +47,18 @@ const totalExpenses = computed(() => {
     .reduce((sum, t) => sum + Number(t.amount), 0)
 })
 
-// Расчет сводки расходов по категориям (строго за текущий месяц)
+// Сводка расходов по категориям за текущий месяц.
 const expensesByCategory = computed(() => {
-  const map = {}
-  
-  // Получаем текущий год и месяц (формат: YYYY-MM)
-  const now = new Date()
-  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  
-  const items = transactionsStore.listData?.items || []
-
-  // Фильтруем: только расходы И только за текущий месяц
-  const currentMonthExpenses = items.filter(t => {
-    const isExpense = t.transaction_type === 'расходы'
-    const isInCurrentMonth = t.transaction_date && t.transaction_date.startsWith(currentYearMonth)
-    return isExpense && isInCurrentMonth
-  })
-  
-  // Группируем и суммируем отфильтрованные транзакции
-  currentMonthExpenses.forEach(t => {
-    const catId = t.category_id || 'none'
-    if (!map[catId]) {
-      map[catId] = 0
-    }
-    map[catId] += Number(t.amount)
-  })
-  
-  // Считаем общую сумму расходов именно за ТЕКУЩИЙ месяц для правильного расчета процентов
-  const totalCurrentMonthExpenses = Object.values(map).reduce((sum, amt) => sum + amt, 0)
-  const total = totalCurrentMonthExpenses || 1 // Защита от деления на 0
-
-  // Превращаем в массив, добавляем метаданные и сортируем по убыванию суммы
-  return Object.keys(map).map(catId => {
-    const id = catId === 'none' ? null : Number(catId)
-    const amount = map[catId]
-    return {
-      id,
-      name: getCategoryName(id),
-      icon: getCategoryIcon(id),
-      amount,
-      percentage: Math.round((amount / total) * 100)
-    }
-  }).sort((a, b) => b.amount - a.amount)
+  return analyticsStore.categorySummary.map(item => ({
+    id: item.category_id,
+    name: getCategoryName(item.category_id),
+    icon: getCategoryIcon(item.category_id),
+    amount: Number(item.total),
+    percentage: Math.round(item.percentage)
+  }))
 })
 
-// Вспомогательные хелперы для названий/иконок из кэша Pinia
+// Вспомогательные хелперы для имени/иконки категории по id из кэша Pinia
 const getCategoryName = (id) => categoriesStore.items.find(c => c.id === id)?.name || 'Без категории'
 const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.icon || '📝'
 </script>
@@ -195,7 +165,11 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
             <p class="text-xs text-gray-400 mt-0.5">Куда уходят деньги в этом месяце</p>
           </div>
 
-          <div v-if="expensesByCategory.length === 0" class="text-center py-12 text-sm text-gray-400 italic">
+          <div v-if="analyticsStore.isLoading" class="flex justify-center py-12">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+          </div>
+
+          <div v-else-if="expensesByCategory.length === 0" class="text-center py-12 text-sm text-gray-400 italic">
             Расходы отсутствуют
           </div>
 
