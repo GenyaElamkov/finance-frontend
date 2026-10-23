@@ -2,22 +2,20 @@
 import { onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAccountsStore } from '@/stores/accounts'
-import { useTransactionsStore } from '@/stores/transactions'
-import { useCategoriesStore } from '@/stores/categories'
 import { useAnalyticsStore } from '@/stores/analytic'
+import ChangeBadge from '@/components/analytics/ChangeBadge.vue'
+import { formatMoney, formatPercent, pickReportCurrency } from '@/utils/format'
+import { previousPeriodLabel } from '@/utils/period'
 
 const router = useRouter()
 const accountsStore = useAccountsStore()
-const transactionsStore = useTransactionsStore()
-const categoriesStore = useCategoriesStore()
 const analyticsStore = useAnalyticsStore()
 
-// При монтировании обновляем все данные с FastAPI
-onMounted(() => {
-  accountsStore.fetchAccounts()
-  transactionsStore.fetchTransactions()
-  categoriesStore.fetchCategories()
-  analyticsStore.fetchMonthlySummaryByCategory()
+// Итоги месяца грузим после счетов,
+// чтобы выбрать валюту отчета (RUB, если есть рублевый счет)
+onMounted(async () => {
+  await accountsStore.fetchAccounts()
+  analyticsStore.fetchMonthSummary(pickReportCurrency(accountsStore.items))
 })
 
 // Метод для быстрого перехода к журналу с выбранным типом операции
@@ -33,34 +31,32 @@ const totalBalance = computed(() => {
   return accountsStore.items.reduce((sum, account) => sum + Number(account.balance), 0)
 })
 
-// Расчет общего объема доходов (суммируем только положительные транзакции)
-const totalIncome = computed(() => {
-  return transactionsStore.listData.items
-    .filter(t => t.transaction_type === 'доходы')
-    .reduce((sum, t) => sum + Number(t.amount), 0)
-})
+// Итоги текущего месяца (с 1-го числа по сегодня) из /analytics/summary-income-expense
+const monthSummary = computed(() => analyticsStore.monthSummary)
+const reportCurrency = computed(() => monthSummary.value?.currency ?? 'RUB')
 
-// Расчет общего объема расходов (суммируем отрицательные транзакции)
-const totalExpenses = computed(() => {
-  return transactionsStore.listData.items
-    .filter(t => t.transaction_type === 'расходы')
-    .reduce((sum, t) => sum + Number(t.amount), 0)
-})
+const incomeText = computed(() =>
+  monthSummary.value ? `+${formatMoney(monthSummary.value.totals.income, reportCurrency.value)}` : '—',
+)
+const expenseText = computed(() =>
+  monthSummary.value ? `-${formatMoney(monthSummary.value.totals.expense, reportCurrency.value)}` : '—',
+)
+const comparisonLabel = computed(() =>
+  monthSummary.value
+    ? previousPeriodLabel(monthSummary.value.previous_period.type, monthSummary.value.period.days)
+    : '',
+)
 
-// Сводка расходов по категориям за текущий месяц.
+// Расходы по категориям верхнего уровня (сумма включает вложенные категории)
 const expensesByCategory = computed(() => {
-  return analyticsStore.categorySummary.map(item => ({
+  return (monthSummary.value?.expense.items ?? []).map(item => ({
     id: item.category_id,
-    name: getCategoryName(item.category_id),
-    icon: getCategoryIcon(item.category_id),
+    name: item.name,
+    icon: item.icon || '📝',
     amount: Number(item.total),
-    percentage: Math.round(item.percentage)
+    percentage: item.percentage
   }))
 })
-
-// Вспомогательные хелперы для имени/иконки категории по id из кэша Pinia
-const getCategoryName = (id) => categoriesStore.items.find(c => c.id === id)?.name || 'Без категории'
-const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.icon || '📝'
 </script>
 
 <template>
@@ -70,7 +66,7 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
       <p class="text-sm text-gray-500 mt-1">Добро пожаловать! Вот актуальное состояние вашего бюджета.</p>
     </div>
 
-    <div v-if="accountsStore.isLoading && transactionsStore.isLoading" class="flex justify-center py-12">
+    <div v-if="accountsStore.isLoading && accountsStore.items.length === 0" class="flex justify-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
     </div>
 
@@ -106,10 +102,16 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Всего доходов</span>
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Доходы за месяц</span>
             <span class="text-xl sm:text-2xl font-bold text-green-600 block mt-1">
-              +{{ totalIncome.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' }) }}
+              {{ incomeText }}
             </span>
+            <ChangeBadge
+              v-if="monthSummary"
+              :value="monthSummary.previous_period.income_change_pct"
+              :positive-is-good="true"
+              :label="comparisonLabel"
+            />
           </div>
           <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center text-xl">
             📈
@@ -118,10 +120,16 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
 
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
           <div>
-            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Всего расходов</span>
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Расходы за месяц</span>
             <span class="text-xl sm:text-2xl font-bold text-red-600 block mt-1">
-              -{{ totalExpenses.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB' }) }}
+              {{ expenseText }}
             </span>
+            <ChangeBadge
+              v-if="monthSummary"
+              :value="monthSummary.previous_period.expense_change_pct"
+              :positive-is-good="false"
+              :label="comparisonLabel"
+            />
           </div>
           <div class="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center text-xl">
             📉
@@ -160,13 +168,22 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
         </div>
 
         <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-          <div class="mb-4">
-            <h3 class="font-bold text-gray-900 text-lg">Расходы по категориям</h3>
-            <p class="text-xs text-gray-400 mt-0.5">Куда уходят деньги в этом месяце</p>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-gray-900 text-lg">Расходы по категориям</h3>
+              <p class="text-xs text-gray-400 mt-0.5">Куда уходят деньги в этом месяце</p>
+            </div>
+            <router-link :to="{ name: 'analytics' }" class="text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors shrink-0">
+              Подробнее &rarr;
+            </router-link>
           </div>
 
-          <div v-if="analyticsStore.isLoading" class="flex justify-center py-12">
+          <div v-if="analyticsStore.monthSummaryLoading && !monthSummary" class="flex justify-center py-12">
             <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+          </div>
+
+          <div v-else-if="analyticsStore.monthSummaryError" class="text-center py-12 text-sm text-red-600">
+            {{ analyticsStore.monthSummaryError }}
           </div>
 
           <div v-else-if="expensesByCategory.length === 0" class="text-center py-12 text-sm text-gray-400 italic">
@@ -179,16 +196,16 @@ const getCategoryIcon = (id) => categoriesStore.items.find(c => c.id === id)?.ic
                 <div class="flex items-center space-x-2 truncate">
                   <span>{{ cat.icon }}</span>
                   <span class="text-gray-700 font-medium truncate">{{ cat.name }}</span>
-                  <span class="text-xs text-gray-400 font-normal">({{ cat.percentage }}%)</span>
+                  <span class="text-xs text-gray-400 font-normal">({{ formatPercent(cat.percentage) }})</span>
                 </div>
                 <span class="font-semibold text-gray-900 shrink-0">
-                  {{ cat.amount.toLocaleString('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }) }}
+                  {{ formatMoney(cat.amount, reportCurrency, { maximumFractionDigits: 0 }) }}
                 </span>
               </div>
               <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                 <div 
                   class="bg-indigo-500 h-full rounded-full transition-all duration-500" 
-                  :style="{ width: `${cat.percentage}%` }"
+                  :style="{ width: `${Math.min(cat.percentage, 100)}%` }"
                 ></div>
               </div>
             </div>
